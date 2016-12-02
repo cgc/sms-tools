@@ -38,7 +38,7 @@ INT32_FAC = (2**31)-1
 INT64_FAC = (2**63)-1
 norm_fact = {'int16':INT16_FAC, 'int32':INT32_FAC, 'int64':INT64_FAC,'float32':1.0,'float64':1.0}
 
-def wavread(filename):
+def wavread(filename, require_mono=True):
 	"""
 	Read a sound file and convert it to a normalized floating point array
 	filename: name of file to read
@@ -50,7 +50,7 @@ def wavread(filename):
 
 	fs, x = read(filename)
 
-	if (len(x.shape) !=1):                                   # raise error if more than one channel
+	if (require_mono and len(x.shape) !=1):                                   # raise error if more than one channel
 		raise ValueError("Audio file should be mono")
 
 	if (fs !=44100):                                         # raise error if more than one channel
@@ -94,6 +94,18 @@ def wavwrite(y, fs, filename):
 	x *= INT16_FAC                               # scaling floating point -1 to 1 range signal to int16 range
 	x = np.int16(x)                              # converting to int16 type
 	write(filename, fs, x)
+
+def wav_tracks_iter(x):
+	"""
+	x: data array returned by wavread
+	yields each track of x
+	"""
+	if len(x.shape) == 1:
+		yield x
+	else:
+		# second dimension is number of tracks
+		for idx in range(x.shape[1]):
+			yield x[:, idx]
 
 def peakDetection(mX, t):
 	"""

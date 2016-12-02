@@ -28,16 +28,21 @@ def main(inputFile='../../sounds/bendir.wav', window='hamming', M=2001, N=2048, 
 	H = 128
 
 	# read input sound
-	fs, x = UF.wavread(inputFile)
+	fs, data = UF.wavread(inputFile, require_mono=False)
 
 	# compute analysis window
 	w = get_window(window, M)
 
-	# analyze the sound with the sinusoidal model
-	tfreq, tmag, tphase = SM.sineModelAnal(x, fs, w, N, H, t, maxnSines, minSineDur, freqDevOffset, freqDevSlope)
+	out_data = []
+	for x in UF.wav_tracks_iter(data):
+		# analyze the sound with the sinusoidal model
+		tfreq, tmag, tphase = SM.sineModelAnal(x, fs, w, N, H, t, maxnSines, minSineDur, freqDevOffset, freqDevSlope)
 
-	# synthesize the output sound from the sinusoidal representation
-	y = SM.sineModelSynth(tfreq, tmag, tphase, Ns, H, fs)
+		# synthesize the output sound from the sinusoidal representation
+		y = SM.sineModelSynth(tfreq, tmag, tphase, Ns, H, fs)
+		out_data.append(y)
+
+	out_data = np.transpose(np.array(out_data))
 
 	# output sound file name
 	outputFile = 'output_sounds/' + os.path.basename(inputFile)[:-4] + '_sineModel.wav'
@@ -84,4 +89,3 @@ def main(inputFile='../../sounds/bendir.wav', window='hamming', M=2001, N=2048, 
 
 if __name__ == "__main__":
 	main()
-
