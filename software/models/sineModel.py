@@ -158,6 +158,7 @@ def sineModelMultiRes(x, fs, w_, N_, t, B_, debug=False):
     hM2_ = np.zeros(num_resolutions)
     # using list because each N can be different, so this is a jagged array
     fftbuffer_ = [0] * num_resolutions
+    band_counts = [0] * num_resolutions
     for idx in range(num_resolutions):
         w = w_[idx]
         hM1_[idx] = int(math.floor((w.size + 1) / 2))  # half analysis window size by rounding
@@ -201,11 +202,9 @@ def sineModelMultiRes(x, fs, w_, N_, t, B_, debug=False):
             ploc = UF.peakDetection(mX, t)  # detect locations of peaks
 
             # filter by frequency bands
-            peak_locations = np.concatenate([
-                peak_locations,
-                ploc[(lower <= ploc) & (ploc < upper)]
-            ])
-            xhi += 1
+            in_band = ploc[(lower <= ploc) & (ploc < upper)]
+            band_counts[idx] += len(in_band)
+            peak_locations = np.concatenate([peak_locations, in_band])
 
         iploc, ipmag, ipphase = UF.peakInterp(mX, pX, ploc)  # refine peak values by interpolation
         ipfreq = fs * iploc / float(N)  # convert peak locations to Hertz
@@ -216,6 +215,7 @@ def sineModelMultiRes(x, fs, w_, N_, t, B_, debug=False):
         yw[hNs - 1:] = fftbuffer[:hNs + 1]
         y[pin - hNs:pin + hNs] += sw * yw  # overlap-add and apply a synthesis window
         pin += H  # advance sound pointer
+    print 'number of peak locations for each band:', zip(B_[:-1], B_[1:], band_counts)
     return y
 
 def sineModelAnal(x, fs, w, N, H, t, maxnSines = 100, minSineDur=.01, freqDevOffset=20, freqDevSlope=0.01):
